@@ -1,13 +1,37 @@
-*.class
-*.log
+# Extracted from https://github.com/ulrich/macaron-factory/blob/master/.gitignore
+# Ignore all dotfiles...
+.*
+# except for .gitignore
+!.gitignore
 
-# sbt specific
-dist/*
-target/
-lib_managed/
-src_managed/
-project/boot/
-project/plugins/project/
-
-# Scala-IDE specific
-.scala_dependencies
+# Ignore Play! working directory #
+db
+eclipse
+log
+logs
+project/project
+project/target
+target
+precompiled
+tmp
+.history
+dist
+.idea
+.idea_modules
+.iml
+test-result
+eclipse
+server.pid
+_mb
+root
+modules/admin/target
+modules/admin/dist
+modules/admin/logs
+modules/app/target
+modules/app/dist
+modules/app/logs
+modules/common/target
+modules/common/dist
+example.log
+project/*.iml
+play
