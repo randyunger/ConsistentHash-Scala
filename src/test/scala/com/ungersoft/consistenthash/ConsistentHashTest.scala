@@ -15,7 +15,7 @@ class ConsistentHashTest extends WordSpec with MustMatchers {
 
     "have a full constructor" in {
       import collection.immutable.TreeMap
-      new ConsistentHash[String](TreeMap.empty[Int, String])(_.length, 1)
+      new ConsistentHash[String](TreeMap.empty[Int, String])(_.hashCode)
     }
 
     "have a factory constructor" in {
@@ -24,11 +24,24 @@ class ConsistentHashTest extends WordSpec with MustMatchers {
 
     "covariant" in {
       val s = ConsistentHash(new Student("Bob"))
-      val p = s.add(new Person("John"))
+      val p = s.update(new Person("John"))
 //      p must be a [ConsistentHash[Person]]
 
     }
+
+    "add a seq of covariant nodes via factory" in {
+      val c = ConsistentHash.empty[String]
+      val d = ConsistentHash.addValues(c, 1, new Student("Bob"), new Person("John"))
+      println(typeOf(d))
+    }
+
+//    "factory constructor with covariant Seq" in {
+//      val c = ConsistentHash[Student](new Person("Tom"))
+//    }
+
   }
+
+  def typeOf[T:Manifest](t:T ) = manifest[T].toString
 }
 
 class Person(name: String)
