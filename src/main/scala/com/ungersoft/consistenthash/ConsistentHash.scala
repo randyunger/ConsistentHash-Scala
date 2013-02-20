@@ -53,16 +53,6 @@ object ConsistentHash {      //Todo: Use CanBuildFrom
     case Seq() => ch
   }
 
-//  def addValues[T, B >: T](ch: ConsistentHash[T], numberOfReplicas: Int, toAdd: B*): ConsistentHash[B] = {
-//    addValues(ch.add(toAdd.head), numberOfReplicas, toAdd.tail:_*)
-//  }
-
-//  @annotation.tailrec
-//  def addValues[T, B >: T](ch: ConsistentHash[T], numberOfReplicas: Int, toAdd: B*): ConsistentHash[B] = toAdd match {
-//    case Seq(a, rest @ _ *) => addValues(ch.update(a, numberOfReplicas), numberOfReplicas, rest: _*)
-//    case Seq() => ch
-//  }
-
   def empty[T] = new ConsistentHash[T]
 
   def reverse0(reversed: Seq[Int], alist: Int* ): Seq[Int] = alist match {
