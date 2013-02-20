@@ -47,18 +47,24 @@ object ConsistentHash {      //Todo: Use CanBuildFrom
   def apply[T](numberOfReplicas: Int, initialValues: T*) =
     addValues(new ConsistentHash[T]()(hashFunction = implicitly), numberOfReplicas, initialValues)
 
+  /** Returns a new ConsistentHash containing 'numberOfReplicas' occurrences of each of 'toAdd'
+    *  @tparam T The type of nodes to be contained in this ConsistentHash
+    *  @param consistentHash The ConsistentHash to add the new nodes to
+    *  @param numberOfReplicas The number of replicas to create for every node in 'toAdd'
+    *  @param toAdd the values to be added to this ConsistentHash
+    *  @return a new ConsistentHash containing 'numberOfReplicas' occurrences of each of 'toAdd'
+    */
   @annotation.tailrec
-  def addValues[T](ch: ConsistentHash[T], numberOfReplicas: Int, toAdd: T*): ConsistentHash[T] = toAdd match {
-    case Seq(a, rest @ _ *) => addValues(ch.update(a, numberOfReplicas), numberOfReplicas, rest: _*)
-    case Seq() => ch
+  def addValues[T](consistentHash: ConsistentHash[T], numberOfReplicas: Int, toAdd: T*): ConsistentHash[T] = toAdd match {
+    case Seq(a, rest @ _ *) => addValues(consistentHash.update(a, numberOfReplicas), numberOfReplicas, rest: _*)
+    case Seq() => consistentHash
   }
 
+  /** Returns an empty ConsistentHash of type T
+    *  @tparam T The type of nodes to be contained in this ConsistentHash
+    *  @return an empty ConsistentHash of type T
+    */
   def empty[T] = new ConsistentHash[T]
-
-  def reverse0(reversed: Seq[Int], alist: Int* ): Seq[Int] = alist match {
-    case Seq() => reversed
-    case Seq(head, rest @ _ *) => reverse0((head +: reversed), rest:_*)
-  }
 }
 
 /** This class implements immutable ConsistentHashing using a TreeMap.
