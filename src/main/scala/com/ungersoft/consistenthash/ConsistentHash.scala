@@ -12,15 +12,15 @@ import collection.immutable.TreeMap
 object ConsistentHash {
 
   //MurmurHash is well distributed. String.hashCode is not.
-  implicit val hash = new HashFunction {
+  implicit val hash = {
     import scala.util.hashing.MurmurHash3
-    def apply(i: Int) = MurmurHash3.stringHash(i.toString)
+    (s: String) => MurmurHash3.stringHash(s)
   }
 
   //Create additional copies of each node to aid load balancing
   implicit val defaultNumberOfReplicas = 3
 
-  def apply[T] = new ConsistentHash[T]
+  def apply[T] = empty[T]
 
   def apply[T](numberOfReplicas: Int) = new ConsistentHash[T]()(hash = implicitly, numberOfReplicas)
 
@@ -35,30 +35,30 @@ object ConsistentHash {
     case Seq() => ch
   }
 
-  //Use trait because Int => Int must shadow Predef.conforms
-  trait HashFunction {
-    def apply(i: Int): Int
-  }
+  def empty[T] = new ConsistentHash[T]
 
 }
 
-class ConsistentHash[T](nodeMap: TreeMap[Int, T] = TreeMap.empty[Int, T])
-                       (implicit hash: ConsistentHash.HashFunction, defaultNumberOfReplicas: Int) {
+class ConsistentHash[+T](nodeMap: TreeMap[Int, T] = TreeMap.empty[Int, T])
+                       (implicit hash: String => Int, defaultNumberOfReplicas: Int) {
 
-  def add(node: T, replicas: Int = defaultNumberOfReplicas) = {
-    val newNodes = (1 to replicas) map (i => (hash(i + node.hashCode) -> node))
-    new ConsistentHash(nodeMap ++ newNodes)
+  def add[B >: T](node: B, replicas: Int = defaultNumberOfReplicas) = {
+    val newNodes = (1 to replicas) map (i => (hash(i + node.getClass.getName + node.hashCode) -> node))
+    new ConsistentHash(filterNode(node) ++ newNodes)
   }
 
-  def remove(node: T) = new ConsistentHash(nodeMap filter { case (k, v) => v != node })
+  def remove[B >: T](node: B) = new ConsistentHash(filterNode(node))
 
   def get(a: Any): T = {
     if (nodeMap.isEmpty) throw new NoSuchElementException("Cannot call .get() on empty ConsistentHash")
-    nodeMap.from(hash(a.hashCode)).headOption match {
+
+    nodeMap.from(hash(a.hashCode.toString)).headOption match {
       case Some((key, value)) => value
-      case None => nodeMap.headOption.get._2  //throw an Exception if nodeMap is empty
+      case None => nodeMap.headOption.get._2
     }
   }
 
-  override def toString = "ConsistentHash(" + nodeMap.toString + ")"
+  private[this] def filterNode[B >: T](node: B) = nodeMap filter { case (k, v) => v != node }
+
+  override def toString = s"ConsistentHash(${nodeMap.take(10).toString} ${if(nodeMap.size>10) "..." else ""})"
 }
