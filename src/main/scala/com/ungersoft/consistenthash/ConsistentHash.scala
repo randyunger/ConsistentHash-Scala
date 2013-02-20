@@ -8,7 +8,7 @@ import collection.immutable.TreeMap
  *  val hash = ConsistentHash("192.168.0.1", "192.168.0.2")
  *
  *  // Make a weighted ConsistentHash. Objects are 5 times more likely to locate to 192.168.0.3, since (5000/1000) = 5
- *  val weighted = ConsistentHash(1000, "192.168.0.2").update("192.168.0.3", 5000)
+ *  val weighted = ConsistentHash(1000, "192.168.0.2").updated("192.168.0.3", 5000)
  *
  *  // Locate an object's node within the ConsistentHash
  *  val location = hash.locate(object)
@@ -56,7 +56,7 @@ object ConsistentHash {      //Todo: Use CanBuildFrom
     */
   @annotation.tailrec
   def addValues[T](consistentHash: ConsistentHash[T], numberOfReplicas: Int, toAdd: T*): ConsistentHash[T] = toAdd match {
-    case Seq(a, rest @ _ *) => addValues(consistentHash.update(a, numberOfReplicas), numberOfReplicas, rest: _*)
+    case Seq(a, rest @ _ *) => addValues(consistentHash.updated(a, numberOfReplicas), numberOfReplicas, rest: _*)
     case Seq() => consistentHash
   }
 
@@ -83,14 +83,14 @@ class ConsistentHash[+T](nodeMap: TreeMap[Int, T] = TreeMap.empty[Int, T])
 
   /** Returns a new ConsistentHash including a number of new Nodes of type T, whose number is equal to numberOfReplicas.
     * After calling, the number of replicas of 'node' is always equal to 'numberOfReplicas',
-    * regardless of the number of replicas before calling update. Increasing the baseline 'numberOfReplicas' increases the balance
+    * regardless of the number of replicas before calling updated. Increasing the baseline 'numberOfReplicas' increases the balance
     * between nodes. Increasing the 'numberOfReplicas' for a particular node increases the likelihood for an object to hash to that particular node.
     *
     *  @param node The node to be added
     *  @param numberOfReplicas The weighting of this node relative to other nodes. Use a minimum of 100 replicas for a balanced distribution.
     *  @return A new ConsistentHash including 'replicas' number of instances of 'node'
     */
-  def update[B >: T](node: B, numberOfReplicas: Int = ConsistentHash.defaultNumberOfReplicas) = numberOfReplicas match {
+  def updated[B >: T](node: B, numberOfReplicas: Int = ConsistentHash.defaultNumberOfReplicas) = numberOfReplicas match {
     case 0 => remove(node)
     case n => {
       val newNodes = (1 to n) map ((i: Int) => (hashFunction(i + node.getClass.getName + node.hashCode) -> node))
@@ -128,6 +128,8 @@ class ConsistentHash[+T](nodeMap: TreeMap[Int, T] = TreeMap.empty[Int, T])
    *  @return A Boolean indicating whether this ConsistentHash contains any nodes
    */
   lazy val isEmpty: Boolean = nodeMap.isEmpty
+
+  def contains(node: Any): Boolean = frequencies.keySet.contains(node)
 
   private[this] def filterNode[B >: T](node: B) = nodeMap filter { case (k, v) => v != node }
 
