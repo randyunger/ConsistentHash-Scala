@@ -24,7 +24,7 @@ class ConsistentHashTest extends WordSpec with MustMatchers {
 
     "covariant" in {
       val s = ConsistentHash(new Student("Bob"))
-      val p = s.update(new Person("John"))
+      val p = s.updated(new Person("John"))
 //      p must be a [ConsistentHash[Person]]
 
     }
@@ -32,7 +32,16 @@ class ConsistentHashTest extends WordSpec with MustMatchers {
     "add a seq of covariant nodes via factory" in {
       val c = ConsistentHash.empty[String]
       val d = ConsistentHash.addValues(c, 1, new Student("Bob"), new Person("John"))
-      println(typeOf(d))
+//      println(typeOf(d))
+    }
+
+    "count" in {
+      val bob = new Student("Bob")
+      val c = ConsistentHash(bob)
+      val count = c.count("a")
+      println(count)
+      println("bob count: " + c.count(bob))
+      println()
     }
 
 //    "factory constructor with covariant Seq" in {

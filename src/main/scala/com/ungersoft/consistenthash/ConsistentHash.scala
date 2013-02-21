@@ -2,7 +2,8 @@ package com.ungersoft.consistenthash
 
 import collection.immutable.TreeMap
 
-/**
+/** A factory for creating ConsistentHash
+ *
  *  @example {{{
  *  // Make a ConsistentHash via the companion object factory
  *  val hash = ConsistentHash("192.168.0.1", "192.168.0.2")
@@ -44,8 +45,10 @@ object ConsistentHash {      //Todo: Use CanBuildFrom
     *  @param initialValues the values to be contained in this ConsistentHash
     *  @return a new ConsistentHash of type T containing 'numberOfReplicas' occurrences of each of the 'initialValues'
     */
-  def apply[T](numberOfReplicas: Int, initialValues: T*) =
-    addValues(new ConsistentHash[T]()(hashFunction = implicitly), numberOfReplicas, initialValues)
+  def apply[T](numberOfReplicas: Int, initialValues: T*) = initialValues.size match {
+    case 0 => addValues(new ConsistentHash[T], defaultNumberOfReplicas, numberOfReplicas) //Single Int param should call other factory method
+    case _ => addValues(new ConsistentHash[T], numberOfReplicas, initialValues: _*)
+  }
 
   /** Returns a new ConsistentHash containing 'numberOfReplicas' occurrences of each of 'toAdd'
     *  @tparam T The type of nodes to be contained in this ConsistentHash
@@ -120,18 +123,34 @@ class ConsistentHash[+T](nodeMap: TreeMap[Int, T] = TreeMap.empty[Int, T])
   }
 
   /**
-    *  @return A Map[Any, Int] indicating the number of occurrences of each node in this ConsistentHash
-    */
-  lazy val frequencies:Map[_ <: Any, Int] = nodeMap groupBy(_._2) mapValues(_.size)
+   *  @return A Seq[(T, Int)] indicating the number of occurrences of each node in this ConsistentHash
+   *          // TODO: Is there a better type than seq? perhaps iterator
+   */
+  lazy val counts: Seq[(T, Int)] = countsMap.toSeq
+
+  /**
+   *  @param node The node to be counted
+   *  @return The number of occurrences of this node in the ConsistentHash, or 0 if the node is not contained
+   */
+  def count(node: Any): Int = node match {                        //Cast to defeat variance checking at compile time
+    case tNode: T @unchecked => countsMap.get(tNode).getOrElse(0)  //Matches all cases
+  }
+
+  /**
+   *  @param node The node to search for
+   *  @return True if the node is contained in this ConsistentHash
+   */
+  def contains(node: Any): Boolean = count(node) > 0
 
   /**
    *  @return A Boolean indicating whether this ConsistentHash contains any nodes
    */
   lazy val isEmpty: Boolean = nodeMap.isEmpty
 
-  def contains(node: Any): Boolean = frequencies.keySet.contains(node)
-
   private[this] def filterNode[B >: T](node: B) = nodeMap filter { case (k, v) => v != node }
+
+  //Must be private[this] in order to retain covariance, because Map[A,B] is invariant in A
+  private[this] lazy val countsMap: Map[T, Int] = nodeMap groupBy(_._2) mapValues(_.size)
 
   override def toString = s"ConsistentHash(${nodeMap.take(10).toString} ${if(nodeMap.size>10) "..." else ""})"
 }
